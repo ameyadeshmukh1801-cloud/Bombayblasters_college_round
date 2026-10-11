@@ -1,0 +1,291 @@
+/* ==========================================================================
+   COMMAND RECOVERY SYSTEM - AURORA LIGHT DESIGN SYSTEM (commandRecovery.css)
+   Non-blocking "Did you mean...?" card with dwell-click & voice selection
+   ========================================================================== */
+
+.command-recovery-overlay-container {
+  position: fixed;
+  bottom: 5.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 85000;
+  width: calc(100% - 2.5rem);
+  max-width: 680px;
+  pointer-events: none; /* Container is non-blocking to rest of page */
+  display: flex;
+  justify-content: center;
+}
+
+.command-recovery-card {
+  pointer-events: auto; /* Card and buttons are interactive */
+  width: 100%;
+  background: rgba(247, 244, 255, 0.94);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg, 28px);
+  box-shadow:
+    0 20px 48px -10px rgba(79, 70, 229, 0.22),
+    0 0 0 1px rgba(79, 70, 229, 0.12),
+    0 0 35px rgba(244, 63, 157, 0.12);
+  padding: 1.35rem 1.65rem 1.15rem 1.65rem;
+  color: #14123A;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: opacity var(--duration-medium, 250ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+              transform var(--duration-medium, 250ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+}
+
+/* 6-Second Auto-dismiss Progress Track */
+.recovery-countdown-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(79, 70, 229, 0.1);
+  overflow: hidden;
+}
+
+.recovery-countdown-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #4F46E5 0%, #F43F9D 50%, #FFB400 100%);
+  transform-origin: left;
+  animation: recoveryTimer 6s linear forwards;
+}
+
+@keyframes recoveryTimer {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* Header: "Did you mean...?" & Heard Transcript */
+.recovery-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.recovery-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.recovery-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(244, 63, 157, 0.15));
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4F46E5;
+  font-size: 1.1rem;
+}
+
+.recovery-title {
+  font-family: var(--font-heading, 'Space Grotesk', sans-serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #14123A;
+  letter-spacing: -0.01em;
+}
+
+.recovery-heard-chip {
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  border-radius: var(--radius-full, 999px);
+  padding: 0.35rem 0.95rem;
+  font-size: 1.05rem; /* Min body size 18px (≈ 1.05-1.1rem) */
+  font-weight: 500;
+  color: #5B5880;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.recovery-heard-chip strong {
+  color: #14123A;
+  font-weight: 700;
+}
+
+/* Suggestions Row */
+.recovery-suggestions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  width: 100%;
+}
+
+/* Base Selectable Buttons */
+.recovery-btn {
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-body, 'Lexend', sans-serif);
+  font-size: 1.125rem; /* 18px minimum */
+  line-height: 1.25;
+  border-radius: 18px;
+  padding: 0.85rem 1.15rem;
+  min-height: 58px; /* Accessible 56px+ target */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  transition: transform var(--duration-fast, 100ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+              box-shadow var(--duration-fast, 100ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+              background var(--duration-fast, 100ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1)),
+              border-color var(--duration-fast, 100ms) var(--ease-out, cubic-bezier(0, 0, 0.2, 1));
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Suggestion Buttons (Electric Indigo Tint with Gradient Glow) */
+.recovery-suggestion-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(79, 70, 229, 0.22);
+  color: #14123A;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.08);
+}
+
+.recovery-suggestion-btn:hover,
+.recovery-suggestion-btn:focus-visible,
+.recovery-suggestion-btn.dwell-hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  border-color: #4F46E5;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.22), 0 0 0 1px #4F46E5;
+}
+
+.recovery-suggestion-btn:active {
+  transform: translateY(0);
+}
+
+/* Numbered Badge [ 1 ], [ 2 ], [ 3 ] */
+.recovery-num-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #4F46E5;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-code, 'JetBrains Mono', monospace);
+  font-size: 1.05rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+}
+
+.recovery-cmd-label {
+  flex: 1;
+  text-align: left;
+  font-weight: 700;
+  color: #14123A;
+  font-size: 1.125rem; /* 18px */
+}
+
+.recovery-voice-hint {
+  font-size: 0.9rem;
+  color: #5B5880;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(79, 70, 229, 0.07);
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+}
+
+/* Footer Row: None of these option & Timer note */
+.recovery-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(79, 70, 229, 0.08);
+}
+
+.recovery-dismiss-btn {
+  background: transparent;
+  border: 1px dashed rgba(91, 88, 128, 0.35);
+  color: #5B5880;
+  font-size: 1.05rem; /* 18px */
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  min-height: 48px;
+  border-radius: var(--radius-full, 999px);
+  gap: 0.5rem;
+}
+
+.recovery-dismiss-btn:hover,
+.recovery-dismiss-btn:focus-visible,
+.recovery-dismiss-btn.dwell-hover {
+  background: rgba(255, 92, 92, 0.08);
+  border-color: #FF5C5C;
+  color: #FF5C5C;
+  transform: translateY(-1px);
+}
+
+.recovery-dismiss-btn .recovery-dismiss-icon {
+  font-size: 0.95rem;
+}
+
+.recovery-timeout-note {
+  font-size: 0.95rem;
+  color: #8E8AA8;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .command-recovery-card,
+  .recovery-countdown-bar,
+  .recovery-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.reduced-motion .command-recovery-card,
+.reduced-motion .recovery-countdown-bar,
+.reduced-motion .recovery-btn {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* High Contrast Mode */
+[data-theme="high-contrast"] .command-recovery-card {
+  background: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  box-shadow: none !important;
+}
+
+[data-theme="high-contrast"] .recovery-suggestion-btn {
+  background: #FFFFFF !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+[data-theme="high-contrast"] .recovery-num-badge {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+[data-theme="high-contrast"] .recovery-dismiss-btn {
+  border: 2px dashed #000000 !important;
+  color: #000000 !important;
+}

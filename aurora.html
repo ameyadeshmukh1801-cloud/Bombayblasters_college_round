@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aurora Light — Pure Background</title>
+  <style>
+    /* ==========================================================================
+       AURORA LIGHT — PURE ANIMATED BACKGROUND
+       Color Palette:
+       - Base: #F7F4FF
+       - Lilac: #C9B8FF
+       - Peach: #FFD3C2
+       - Mint:  #BFF5E3
+       - Sky:   #BFE3FF
+       - Indigo Accent (10%): #4F46E5
+       - Pink Accent (8%):    #F43F9D
+       ========================================================================== */
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #F7F4FF;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Fullscreen Aurora Canvas Viewport */
+    .aurora-viewport {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #F7F4FF;
+    }
+
+    /* ─── 1. GRAIN TEXTURE (3% OPACITY) ─────────────────────────────────────── */
+    .aurora-grain-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainNoise)'/%3E%3C/svg%3E");
+    }
+
+    /* ─── 2. CENTRAL RADIAL LIGHT GLOW ──────────────────────────────────────── */
+    .aurora-centre-glow {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.65) 0%, rgba(247, 244, 255, 0.3) 45%, transparent 75%);
+    }
+
+    /* ─── 3. LARGE BLURRED MESH BLOBS (BLUR 140PX) ──────────────────────────── */
+    .aurora-mesh-stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(140px);
+      -webkit-filter: blur(140px);
+      transform: translate3d(0, 0, 0);
+    }
+
+    .aurora-blob {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      transform-origin: center center;
+      will-change: transform;
+      mix-blend-mode: soft-light;
+    }
+
+    /* Blob 1: Lilac — Top Left (Largest) */
+    .blob-lilac {
+      width: 800px;
+      height: 800px;
+      top: -160px;
+      left: -160px;
+      background: #C9B8FF;
+      opacity: 0.88;
+      animation: floatLilac 38s ease-in-out infinite alternate;
+    }
+
+    /* Blob 2: Peach — Bottom Right */
+    .blob-peach {
+      width: 720px;
+      height: 720px;
+      bottom: -150px;
+      right: -150px;
+      background: #FFD3C2;
+      opacity: 0.85;
+      animation: floatPeach 40s ease-in-out infinite alternate;
+    }
+
+    /* Blob 3: Mint — Bottom Left */
+    .blob-mint {
+      width: 640px;
+      height: 640px;
+      bottom: -120px;
+      left: -120px;
+      background: #BFF5E3;
+      opacity: 0.86;
+      animation: floatMint 36s ease-in-out infinite alternate;
+    }
+
+    /* Blob 4: Sky — Top Right */
+    .blob-sky {
+      width: 600px;
+      height: 600px;
+      top: -120px;
+      right: -120px;
+      background: #BFE3FF;
+      opacity: 0.84;
+      animation: floatSky 39s ease-in-out infinite alternate;
+    }
+
+    /* ─── 4. SUBTLE ACCENT GLOWS (INDIGO 10%, PINK 8%) ──────────────────────── */
+    .aurora-accent {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      transform-origin: center center;
+      will-change: transform;
+      mix-blend-mode: screen;
+    }
+
+    .accent-indigo {
+      width: 360px;
+      height: 360px;
+      top: 32%;
+      left: 36%;
+      background: #4F46E5;
+      opacity: 0.10;
+      filter: blur(120px);
+      -webkit-filter: blur(120px);
+      animation: wanderIndigo 35s ease-in-out infinite alternate;
+    }
+
+    .accent-pink {
+      width: 320px;
+      height: 320px;
+      bottom: 28%;
+      right: 32%;
+      background: #F43F9D;
+      opacity: 0.08;
+      filter: blur(110px);
+      -webkit-filter: blur(110px);
+      animation: wanderPink 38s ease-in-out infinite alternate;
+    }
+
+    /* ─── 5. SLOW WAVING AURORA RIBBON ──────────────────────────────────────── */
+    .aurora-ribbon-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+      mix-blend-mode: soft-light;
+    }
+
+    .aurora-ribbon {
+      position: absolute;
+      width: 160vw;
+      height: 380px;
+      top: 38%;
+      left: -30vw;
+      background: linear-gradient(
+        105deg,
+        transparent 0%,
+        rgba(201, 184, 255, 0.42) 22%,
+        rgba(191, 245, 227, 0.50) 48%,
+        rgba(255, 211, 194, 0.45) 74%,
+        transparent 100%
+      );
+      filter: blur(75px);
+      -webkit-filter: blur(75px);
+      transform-origin: 50% 50%;
+      will-change: transform;
+      animation: sweepRibbon 36s ease-in-out infinite alternate;
+    }
+
+    .aurora-ribbon-secondary {
+      position: absolute;
+      width: 150vw;
+      height: 280px;
+      top: 48%;
+      left: -25vw;
+      background: linear-gradient(
+        75deg,
+        transparent 0%,
+        rgba(191, 227, 255, 0.35) 28%,
+        rgba(201, 184, 255, 0.38) 52%,
+        rgba(191, 245, 227, 0.35) 76%,
+        transparent 100%
+      );
+      filter: blur(85px);
+      -webkit-filter: blur(85px);
+      transform-origin: 50% 50%;
+      will-change: transform;
+      animation: sweepRibbonAlt 40s ease-in-out infinite alternate;
+    }
+
+    /* ─── 6. 12 FLOATING GLOWING PARTICLES ──────────────────────────────────── */
+    .aurora-particles-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    .p-indigo {
+      background: #4F46E5;
+      box-shadow: 0 0 10px 2px rgba(79, 70, 229, 0.45);
+    }
+
+    .p-pink {
+      background: #F43F9D;
+      box-shadow: 0 0 10px 2px rgba(244, 63, 157, 0.45);
+    }
+
+    .p-yellow {
+      background: #FDE047;
+      box-shadow: 0 0 10px 2px rgba(253, 224, 71, 0.55);
+    }
+
+    /* 12 Particles with varied sizes, speeds, horizontal positions, and delays */
+    .p-1  { width: 5px; height: 5px; left: 8%;  bottom: -30px; opacity: 0.24; animation: floatParticle 22s ease-in-out 0s infinite; }
+    .p-2  { width: 8px; height: 8px; left: 16%; bottom: -30px; opacity: 0.28; animation: floatParticle 28s ease-in-out 4s infinite; }
+    .p-3  { width: 4px; height: 4px; left: 25%; bottom: -30px; opacity: 0.22; animation: floatParticle 20s ease-in-out 1s infinite; }
+    .p-4  { width: 9px; height: 9px; left: 34%; bottom: -30px; opacity: 0.30; animation: floatParticle 32s ease-in-out 7s infinite; }
+    .p-5  { width: 6px; height: 6px; left: 43%; bottom: -30px; opacity: 0.25; animation: floatParticle 24s ease-in-out 2s infinite; }
+    .p-6  { width: 7px; height: 7px; left: 52%; bottom: -30px; opacity: 0.27; animation: floatParticle 26s ease-in-out 9s infinite; }
+    .p-7  { width: 5px; height: 5px; left: 61%; bottom: -30px; opacity: 0.23; animation: floatParticle 21s ease-in-out 3s infinite; }
+    .p-8  { width: 10px; height: 10px; left: 70%; bottom: -30px; opacity: 0.29; animation: floatParticle 34s ease-in-out 6s infinite; }
+    .p-9  { width: 6px; height: 6px; left: 78%; bottom: -30px; opacity: 0.25; animation: floatParticle 25s ease-in-out 11s infinite; }
+    .p-10 { width: 4px; height: 4px; left: 86%; bottom: -30px; opacity: 0.21; animation: floatParticle 19s ease-in-out 5s infinite; }
+    .p-11 { width: 8px; height: 8px; left: 93%; bottom: -30px; opacity: 0.28; animation: floatParticle 30s ease-in-out 8s infinite; }
+    .p-12 { width: 5px; height: 5px; left: 49%; bottom: -30px; opacity: 0.24; animation: floatParticle 23s ease-in-out 13s infinite; }
+
+    /* ─── 7. 60FPS GPU ANIMATION KEYFRAMES (35-40S LOOPS) ───────────────────── */
+    
+    /* Lilac Blob (38s full loop) */
+    @keyframes floatLilac {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate3d(75px, 55px, 0) scale(1.09) rotate(7deg);
+      }
+      100% {
+        transform: translate3d(-45px, 90px, 0) scale(0.95) rotate(-5deg);
+      }
+    }
+
+    /* Peach Blob (40s full loop) */
+    @keyframes floatPeach {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate3d(-70px, -60px, 0) scale(1.10) rotate(-6deg);
+      }
+      100% {
+        transform: translate3d(55px, -80px, 0) scale(0.94) rotate(8deg);
+      }
+    }
+
+    /* Mint Blob (36s full loop) */
+    @keyframes floatMint {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(60px, -50px, 0) scale(1.08);
+      }
+      100% {
+        transform: translate3d(-35px, 65px, 0) scale(0.96);
+      }
+    }
+
+    /* Sky Blob (39s full loop) */
+    @keyframes floatSky {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(-55px, 70px, 0) scale(1.11);
+      }
+      100% {
+        transform: translate3d(45px, -45px, 0) scale(0.93);
+      }
+    }
+
+    /* Subtle Indigo Accent Wandering (35s loop) */
+    @keyframes wanderIndigo {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(-110px, 90px, 0) scale(1.22);
+      }
+      100% {
+        transform: translate3d(130px, -70px, 0) scale(0.88);
+      }
+    }
+
+    /* Subtle Pink Accent Wandering (38s loop) */
+    @keyframes wanderPink {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+      50% {
+        transform: translate3d(100px, -80px, 0) scale(1.20);
+      }
+      100% {
+        transform: translate3d(-120px, 60px, 0) scale(0.85);
+      }
+    }
+
+    /* Aurora Ribbon Primary Sweep (36s loop) */
+    @keyframes sweepRibbon {
+      0% {
+        transform: translate3d(0, 0, 0) rotate(-6deg) scaleY(1);
+      }
+      50% {
+        transform: translate3d(4vw, -45px, 0) rotate(3deg) scaleY(1.25);
+      }
+      100% {
+        transform: translate3d(-5vw, 55px, 0) rotate(-4deg) scaleY(0.92);
+      }
+    }
+
+    /* Aurora Ribbon Secondary Sweep (40s loop) */
+    @keyframes sweepRibbonAlt {
+      0% {
+        transform: translate3d(0, 0, 0) rotate(5deg) scaleY(1);
+      }
+      50% {
+        transform: translate3d(-6vw, 40px, 0) rotate(-3deg) scaleY(1.18);
+      }
+      100% {
+        transform: translate3d(5vw, -50px, 0) rotate(4deg) scaleY(0.90);
+      }
+    }
+
+    /* Floating Swaying Particles */
+    @keyframes floatParticle {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      25% {
+        transform: translate3d(18px, -28vh, 0);
+      }
+      50% {
+        transform: translate3d(-14px, -58vh, 0);
+      }
+      75% {
+        transform: translate3d(22px, -86vh, 0);
+      }
+      100% {
+        transform: translate3d(-8px, -115vh, 0);
+      }
+    }
+
+    /* ─── 8. PAUSE ANIMATIONS WHEN TAB IS HIDDEN ────────────────────────────── */
+    body.tab-paused * {
+      animation-play-state: paused !important;
+    }
+
+    /* ─── 9. PREFERS-REDUCED-MOTION (ACCESSIBILITY) ──────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .aurora-blob,
+      .aurora-accent,
+      .aurora-ribbon,
+      .aurora-ribbon-secondary,
+      .particle {
+        animation: none !important;
+      }
+
+      /* Peaceful, frozen fallback gradient */
+      .aurora-mesh-stage {
+        background: radial-gradient(circle at 18% 18%, #C9B8FF 0%, transparent 45%),
+                    radial-gradient(circle at 82% 82%, #FFD3C2 0%, transparent 48%),
+                    radial-gradient(circle at 18% 82%, #BFF5E3 0%, transparent 42%),
+                    radial-gradient(circle at 82% 18%, #BFE3FF 0%, transparent 40%);
+        filter: blur(80px);
+        -webkit-filter: blur(80px);
+      }
+
+      .aurora-particles-layer,
+      .aurora-ribbon-wrap {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="aurora-viewport">
+    <!-- 1. Faint Grain Texture (3% opacity) -->
+    <div class="aurora-grain-overlay"></div>
+
+    <!-- 2. Central Radial Light Glow -->
+    <div class="aurora-centre-glow"></div>
+
+    <!-- 3. Four Large Blurred Mesh Blobs (Blur 140px) -->
+    <div class="aurora-mesh-stage">
+      <div class="aurora-blob blob-lilac"></div>
+      <div class="aurora-blob blob-peach"></div>
+      <div class="aurora-blob blob-mint"></div>
+      <div class="aurora-blob blob-sky"></div>
+    </div>
+
+    <!-- 4. Wandering Subtle Accent Glows (Indigo 10%, Pink 8%) -->
+    <div class="aurora-accent accent-indigo"></div>
+    <div class="aurora-accent accent-pink"></div>
+
+    <!-- 5. Soft Wide Aurora Ribbon Wave -->
+    <div class="aurora-ribbon-wrap">
+      <div class="aurora-ribbon"></div>
+      <div class="aurora-ribbon-secondary"></div>
+    </div>
+
+    <!-- 6. 12 Tiny Glowing Floating Particles -->
+    <div class="aurora-particles-layer">
+      <div class="particle p-indigo p-1"></div>
+      <div class="particle p-pink   p-2"></div>
+      <div class="particle p-yellow p-3"></div>
+      <div class="particle p-indigo p-4"></div>
+      <div class="particle p-pink   p-5"></div>
+      <div class="particle p-yellow p-6"></div>
+      <div class="particle p-indigo p-7"></div>
+      <div class="particle p-pink   p-8"></div>
+      <div class="particle p-yellow p-9"></div>
+      <div class="particle p-indigo p-10"></div>
+      <div class="particle p-pink   p-11"></div>
+      <div class="particle p-yellow p-12"></div>
+    </div>
+  </div>
+
+  <script>
+    // Tab Visibility Performance Optimization:
+    // Automatically pause all GPU transform animations when the browser tab is hidden/minimized
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        document.body.classList.add('tab-paused');
+      } else {
+        document.body.classList.remove('tab-paused');
+      }
+    });
+  </script>
+</body>
+</html>

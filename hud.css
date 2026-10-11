@@ -1,0 +1,323 @@
+/* ==========================================================================
+   HANDSFREE HUD & VIRTUAL CURSOR SYSTEM - AURORA LIGHT (hud.css)
+   ========================================================================== */
+
+/* Virtual Pointer Cursor (Indigo Ring with Pink-to-Peach Glow Trail) */
+#handsfree-virtual-pointer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  pointer-events: none;
+  z-index: 999999;
+  transition: transform 0.04s linear;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Centered initially on viewport */
+  transform: translate3d(calc(50vw - 18px), calc(50vh - 18px), 0);
+  will-change: transform;
+}
+
+.pointer-dot {
+  width: 16px;
+  height: 16px;
+  background: #4F46E5;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 20px rgba(244, 63, 157, 0.8),
+    0 0 35px rgba(255, 211, 194, 0.9),
+    0 4px 12px rgba(79, 70, 229, 0.4);
+  transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#handsfree-virtual-pointer.clicking .pointer-dot {
+  transform: scale(1.6);
+  background-color: #F43F9D;
+  box-shadow: 0 0 25px rgba(244, 63, 157, 0.9);
+}
+
+#handsfree-virtual-pointer.gesture-active .pointer-dot {
+  background-color: #FFB400;
+  transform: scale(1.4);
+}
+
+/* Dwell Progress Circular Ring (Sunny Yellow on Deep Ink Track) */
+.dwell-svg {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 48px;
+  height: 48px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.dwell-circle-bg {
+  fill: none;
+  stroke: #14123A; /* Deep Ink Track */
+  stroke-width: 3.5;
+  opacity: 0.85;
+}
+
+.dwell-circle-progress {
+  fill: none;
+  stroke: #FFB400; /* Sunny Yellow */
+  stroke-width: 4.5;
+  stroke-dasharray: 126; /* 2 * PI * r (r=20) */
+  stroke-dashoffset: 126;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.05s linear;
+  filter: drop-shadow(0 0 6px rgba(255, 180, 0, 0.8));
+}
+
+#handsfree-virtual-pointer.dwell-active .dwell-circle-progress {
+  stroke: #FFB400;
+}
+
+/* Floating HUD Controller Bar (Aurora Frosted Glass) */
+.hud-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-full);
+  box-shadow: 0 16px 40px -10px rgba(79, 70, 229, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.8);
+  z-index: 90000;
+  transition: all 0.3s ease;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #14123A;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-full);
+  background: rgba(79, 70, 229, 0.06);
+  border: 1px solid rgba(79, 70, 229, 0.12);
+}
+
+.hud-item-icon {
+  font-size: 1.1rem;
+}
+
+.hud-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  color: #14123A;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.08);
+}
+
+.hud-btn:hover {
+  background: var(--gradient-btn);
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(244, 63, 157, 0.4);
+}
+
+.hud-btn.active {
+  background: var(--gradient-btn);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+}
+
+/* Webcam Floating Preview Window */
+.webcam-hud-widget {
+  position: fixed;
+  top: 5rem;
+  right: 1.5rem;
+  width: 350px;
+  height: 270px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 40px -10px rgba(79, 70, 229, 0.18);
+  z-index: 90000;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, width 0.3s ease, height 0.3s ease;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.webcam-hud-widget.expanded {
+  width: 520px;
+  height: 390px;
+}
+
+.webcam-hud-widget:hover {
+  border-color: #4F46E5;
+  box-shadow: 0 25px 50px -10px rgba(244, 63, 157, 0.25);
+}
+
+.webcam-hud-widget.is-dragging {
+  border-color: #F43F9D;
+  box-shadow: 0 25px 60px rgba(244, 63, 157, 0.35);
+  opacity: 0.95;
+  transition: none;
+}
+
+.webcam-drag-handle {
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(79, 70, 229, 0.1);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #14123A;
+  letter-spacing: 0.04em;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.webcam-drag-handle:hover {
+  background: rgba(79, 70, 229, 0.06);
+  color: #4F46E5;
+}
+
+.webcam-drag-handle:active,
+.webcam-hud-widget.is-dragging .webcam-drag-handle {
+  cursor: grabbing;
+  background: rgba(244, 63, 157, 0.1);
+}
+
+.webcam-video-element {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Mirror view */
+  position: relative;
+}
+
+.webcam-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+
+.webcam-status-overlay {
+  position: absolute;
+  bottom: 0;
+  inset-x: 0;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #14123A;
+  border-top: 1px solid rgba(79, 70, 229, 0.12);
+  z-index: 5;
+}
+
+/* Voice Recognition Waveform HUD (Pink to Indigo Animated Gradient) */
+.voice-hud-indicator {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 18px;
+}
+
+.voice-wave-bar {
+  width: 4px;
+  height: 100%;
+  background: var(--gradient-btn);
+  border-radius: 99px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.voice-wave-bar:nth-child(1) { animation-delay: 0.0s; }
+.voice-wave-bar:nth-child(2) { animation-delay: 0.2s; }
+.voice-wave-bar:nth-child(3) { animation-delay: 0.4s; }
+.voice-wave-bar:nth-child(4) { animation-delay: 0.1s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+
+/* Vimium-Style Numbered Element Overlay Tags (Bold Rounded Squares in Indigo with White Numbers) */
+.handsfree-element-tag {
+  position: absolute;
+  background: #4F46E5;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 3px 8px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45), 0 0 0 2px #ffffff;
+  z-index: 99999;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-20%);
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: translateY(-50%) translateX(-20%) scale(0.5); opacity: 0; }
+  to { transform: translateY(-50%) translateX(-20%) scale(1); opacity: 1; }
+}
+
+/* Dictation Mode Banner Overlay */
+.dictation-banner {
+  position: fixed;
+  top: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gradient-btn);
+  color: #ffffff;
+  padding: 0.6rem 1.8rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 24px rgba(244, 63, 157, 0.4);
+  z-index: 90000;
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 15px rgba(79, 70, 229, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(244, 63, 157, 0.7); }
+  100% { box-shadow: 0 0 15px rgba(79, 70, 229, 0.3); }
+}

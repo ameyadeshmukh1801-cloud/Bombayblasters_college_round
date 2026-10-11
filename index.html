@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="aurora">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Handsfree: Accessible Voice and Webcam-Based Web Browsing Platform. Control cursor with head/hand movement, navigate by voice, and dictate text effortlessly without mouse or keyboard.">
+  <title>Handsfree | Accessible Voice & Webcam Browsing</title>
+  
+  <!-- CSS Stylesheets & Google Fonts (Unbounded, Space Grotesk, Lexend, JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=Lexend:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/css/main.css">
+  <link rel="stylesheet" href="src/css/auth.css">
+  <link rel="stylesheet" href="src/css/hud.css">
+  <link rel="stylesheet" href="src/css/sandbox.css">
+  <link rel="stylesheet" href="src/css/calibration.css">
+  
+  <!-- FontAwesome / Lucide Icons SVG CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- MediaPipe Tasks Vision CDN Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       AURORA LIGHT LIVING ANIMATED BACKGROUND LAYER
+  ════════════════════════════════════════════════════════════ -->
+  <div id="aurora-bg-container" class="aurora-bg-container" aria-hidden="true">
+    <!-- SVG Grain / Noise Texture Filter Overlay -->
+    <svg class="aurora-noise-svg" width="100%" height="100%">
+      <filter id="auroraGrainFilter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/>
+        <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.038 0"/>
+      </filter>
+      <rect width="100%" height="100%" filter="url(#auroraGrainFilter)"/>
+    </svg>
+
+    <!-- 4 Large Blurred Mesh Blobs (120px-160px blur) -->
+    <div class="aurora-blob blob-lilac"></div>
+    <div class="aurora-blob blob-peach"></div>
+    <div class="aurora-blob blob-mint"></div>
+    <div class="aurora-blob blob-sky"></div>
+
+    <!-- 2 Wandering Subtle Accent Glows -->
+    <div class="aurora-accent accent-indigo"></div>
+    <div class="aurora-accent accent-pink"></div>
+
+    <!-- Reactive Pulse Glow -->
+    <div class="aurora-pulse-glow" id="aurora-pulse-glow"></div>
+
+    <!-- Radial Content Highlight Spot -->
+    <div class="aurora-radial-spot"></div>
+
+    <!-- Floating Particles (Indigo, Pink, Yellow) -->
+    <div class="aurora-particles-wrap">
+      <div class="aurora-particle p-indigo p-1"></div>
+      <div class="aurora-particle p-pink p-2"></div>
+      <div class="aurora-particle p-yellow p-3"></div>
+      <div class="aurora-particle p-indigo p-4"></div>
+      <div class="aurora-particle p-pink p-5"></div>
+      <div class="aurora-particle p-yellow p-6"></div>
+      <div class="aurora-particle p-indigo p-7"></div>
+      <div class="aurora-particle p-pink p-8"></div>
+      <div class="aurora-particle p-yellow p-9"></div>
+      <div class="aurora-particle p-indigo p-10"></div>
+      <div class="aurora-particle p-pink p-11"></div>
+      <div class="aurora-particle p-yellow p-12"></div>
+      <div class="aurora-particle p-indigo p-13"></div>
+      <div class="aurora-particle p-pink p-14"></div>
+      <div class="aurora-particle p-yellow p-15"></div>
+      <div class="aurora-particle p-pink p-16"></div>
+    </div>
+
+    <!-- Soft Waving Aurora Ribbon (Lilac-Mint-Peach Gradient) -->
+    <div class="aurora-ribbon-wrap">
+      <div class="aurora-ribbon"></div>
+      <div class="aurora-ribbon-secondary"></div>
+    </div>
+
+    <!-- Faint Wavy Sound-Wave Lines -->
+    <svg class="aurora-soundwaves-svg" viewBox="0 0 1440 220" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="auroraWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#F43F9D" stop-opacity="0.15"/>
+          <stop offset="50%" stop-color="#4F46E5" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#FFB400" stop-opacity="0.15"/>
+        </linearGradient>
+      </defs>
+      <path class="wave-path wave-1" fill="none" stroke="url(#auroraWaveGrad)" stroke-width="2.5" d="M0,110 C320,170 440,30 720,110 C1000,190 1140,40 1440,110"></path>
+      <path class="wave-path wave-2" fill="none" stroke="url(#auroraWaveGrad)" stroke-width="2" d="M0,130 C360,70 480,180 780,120 C1080,60 1220,170 1440,130"></path>
+    </svg>
+  </div>
+  <div id="loading-screen" role="status" aria-label="Loading Handsfree">
+    <!-- Particle background -->
+    <div class="loading-particles" aria-hidden="true">
+      <div class="load-particle" style="width:180px;height:180px;top:10%;left:5%;--dur:9s;--delay:0s;"></div>
+      <div class="load-particle" style="width:120px;height:120px;top:60%;left:80%;--dur:11s;--delay:1.5s;background:rgba(6,182,212,0.12);"></div>
+      <div class="load-particle" style="width:90px;height:90px;top:80%;left:20%;--dur:7s;--delay:0.8s;background:rgba(139,92,246,0.1);"></div>
+      <div class="load-particle" style="width:60px;height:60px;top:25%;left:70%;--dur:13s;--delay:2s;"></div>
+    </div>
+
+    <!-- SVG gradient defs -->
+    <svg width="0" height="0" style="position:absolute;">
+      <defs>
+        <linearGradient id="loadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"  stop-color="#10b981"/>
+          <stop offset="50%" stop-color="#06b6d4"/>
+          <stop offset="100%" stop-color="#8b5cf6"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Logo & Brand -->
+    <div class="loading-brand">
+      <div class="loading-icon-ring">
+        <svg class="ring-svg" viewBox="0 0 90 90">
+          <circle class="ring-track" cx="45" cy="45" r="40"/>
+          <circle class="ring-fill"  cx="45" cy="45" r="40" stroke-dasharray="251" stroke-dashoffset="62"/>
+        </svg>
+        <div class="loading-icon-core">
+          <div class="core-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+        </div>
+      </div>
+      <div class="loading-title">HANDSFREE</div>
+      <div class="loading-tagline">Voice &amp; Webcam Browsing Platform</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="loading-progress-wrap">
+      <div class="loading-progress-bar">
+        <div class="loading-progress-fill" id="load-prog-fill"></div>
+      </div>
+      <div class="loading-status-text" id="load-status-text">Initializing modules...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LOGIN PAGE
+  ════════════════════════════════════════════════════════════ -->
+  <div id="login-page" class="hidden" role="main" aria-label="Sign in to Handsfree">
+    <div class="login-grid-bg" aria-hidden="true"></div>
+
+    <!-- Decorative blobs (fixed position, behind everything) -->
+    <div class="login-blob" style="position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:#10b981;--dur:14s;--delay:0s;" aria-hidden="true"></div>
+    <div class="login-blob" style="position:fixed;width:400px;height:400px;bottom:-100px;right:-100px;background:#06b6d4;--dur:10s;--delay:2s;" aria-hidden="true"></div>
+    <div class="login-blob" style="position:fixed;width:300px;height:300px;top:40%;right:20%;background:#8b5cf6;--dur:16s;--delay:1s;" aria-hidden="true"></div>
+
+    <!-- Scroll centering wrapper -->
+    <div class="login-scroll-inner">
+
+      <!-- Login Card -->
+      <div class="login-card">
+        <div class="login-badge">✦ Secure Access</div>
+
+        <div class="login-header">
+          <div class="login-logo"><i class="fa-solid fa-hand-pointer"></i></div>
+          <h1 class="login-title">Welcome Back</h1>
+          <p class="login-subtitle">Sign in to your Handsfree account</p>
+        </div>
+
+        <!-- Social Logins -->
+        <div class="login-socials">
+          <button class="btn-social" id="login-google-btn" type="button">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Google
+          </button>
+          <button class="btn-social" id="login-github-btn" type="button">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+              <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+            GitHub
+          </button>
+        </div>
+
+        <div class="login-divider">or continue with email</div>
+
+        <!-- Email / Password Form -->
+        <form class="login-form" id="login-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email address</label>
+            <div class="form-input-wrap">
+              <i class="fa-regular fa-envelope form-input-icon"></i>
+              <input
+                type="email"
+                id="login-email"
+                class="form-input"
+                placeholder="you@example.com"
+                autocomplete="email"
+                aria-required="true"
+              >
+            </div>
+            <div class="form-error" id="email-error"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="form-input-wrap">
+              <i class="fa-solid fa-lock form-input-icon"></i>
+              <input
+                type="password"
+                id="login-password"
+                class="form-input"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                aria-required="true"
+              >
+              <button type="button" class="btn-pw-toggle" id="pw-toggle-btn" aria-label="Show password">
+                <i class="fa-regular fa-eye" id="pw-toggle-icon"></i>
+              </button>
+            </div>
+            <div class="form-error" id="password-error"><i class="fa-solid fa-circle-exclamation"></i><span></span></div>
+          </div>
+
+          <div class="form-extras">
+            <label class="form-checkbox-wrap">
+              <input type="checkbox" id="login-remember">
+              Remember me
+            </label>
+            <a href="#" class="form-link" id="forgot-pw-link">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-login" id="login-submit-btn">
+            <div class="btn-spinner"></div>
+            <span class="btn-login-text"><i class="fa-solid fa-arrow-right-to-bracket"></i> &nbsp;Sign In</span>
+          </button>
+        </form>
+
+        <div class="login-footer">
+          Don't have an account? <a href="#" id="signup-link">Create one free</a>
+        </div>
+      </div>
+
+      <!-- Skip Login Button (below card) -->
+      <button class="btn-skip-login" id="skip-login-btn" type="button" aria-label="Skip login and enter as guest">
+        <i class="fa-solid fa-forward"></i> Skip for now &nbsp;·&nbsp; Enter as Guest
+      </button>
+
+    </div><!-- /.login-scroll-inner -->
+  </div>
+
+
+  <!-- Main Web App Container -->
+  <div class="app-container">
+    
+    <!-- Navbar Header -->
+    <header class="navbar">
+      <div class="brand-logo">
+        <div class="brand-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+        <div class="brand-badge">HANDSFREE <span style="font-weight: 400; font-size: 0.9rem; color: var(--text-muted);">v2.4</span></div>
+      </div>
+      
+      <!-- System Control Buttons -->
+      <div class="nav-controls">
+        <div id="system-status-badge" class="badge badge-active">
+          <span class="pulse-dot"></span> System Ready
+        </div>
+        
+        <button id="toggle-tracking-btn" class="btn btn-primary" aria-label="Toggle Webcam & Voice Tracking">
+          <i class="fa-solid fa-video"></i> <span id="tracking-btn-text">Start Handsfree</span>
+        </button>
+
+        <button id="open-calibration-btn" class="btn btn-secondary" aria-label="Quick Calibration Setup">
+          <i class="fa-solid fa-crosshairs"></i> Calibrate (30s)
+        </button>
+
+        <button id="open-metrics-btn" class="btn btn-outline" aria-label="Performance Metrics & Evaluation">
+          <i class="fa-solid fa-chart-line"></i> Evaluation Metrics
+        </button>
+
+        <button id="toggle-theme-btn" class="btn btn-outline btn-icon-only" title="Toggle Theme (Dark / Light / High Contrast)" aria-label="Toggle Theme">
+          <i class="fa-solid fa-circle-half-stroke"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Interactive Web Browser Window Sandbox -->
+    <main class="browser-window">
+      
+      <!-- Browser Tab Header Bar -->
+      <div class="browser-tabs-bar">
+        <div class="browser-tab active" data-app="search">
+          <i class="fa-solid fa-magnifying-glass" style="color: var(--secondary);"></i> Accessible Search
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <div class="browser-tab" data-app="news">
+          <i class="fa-solid fa-newspaper" style="color: var(--primary);"></i> Daily News
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <div class="browser-tab" data-app="media">
+          <i class="fa-solid fa-circle-play" style="color: var(--danger);"></i> Media Player
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <div class="browser-tab" data-app="notepad">
+          <i class="fa-solid fa-pen-to-square" style="color: var(--accent);"></i> Dictation Pad
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <div class="browser-tab" data-app="benchmark">
+          <i class="fa-solid fa-bullseye" style="color: #38bdf8;"></i> Benchmark Test
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <div class="browser-tab" data-app="elearning">
+          <i class="fa-solid fa-graduation-cap" style="color: #f43f5e;"></i> E-Learning Portal
+          <span class="browser-tab-close">&times;</span>
+        </div>
+        <button class="add-tab-btn" title="Open Custom Web URL">+</button>
+      </div>
+
+      <!-- Navigation & URL Input Bar -->
+      <div class="browser-nav-bar">
+        <button id="nav-back-btn" class="nav-btn" title="Back (Voice: 'back')"><i class="fa-solid fa-arrow-left"></i></button>
+        <button id="nav-forward-btn" class="nav-btn" title="Forward (Voice: 'forward')"><i class="fa-solid fa-arrow-right"></i></button>
+        <button id="nav-refresh-btn" class="nav-btn" title="Refresh (Voice: 'refresh')"><i class="fa-solid fa-rotate-right"></i></button>
+        <button id="nav-home-btn" class="nav-btn" title="Home Page (Voice: 'home')"><i class="fa-solid fa-house"></i></button>
+        
+        <div class="url-input-wrapper">
+          <i class="fa-solid fa-lock url-icon"></i>
+          <input type="text" id="browser-url-input" class="url-input" value="https://handsfree.web/search" placeholder="Type or say URL...">
+        </div>
+
+        <button id="show-element-tags-btn" class="btn btn-secondary" style="font-size: 0.8rem;" title="Show Vimium-style Numbered Link Tags (Voice: 'show links' or 'numbers')">
+          <i class="fa-solid fa-hashtag"></i> Show Numbers
+        </button>
+      </div>
+
+      <!-- Browser Content Screen Area -->
+      <div class="browser-content-area" id="browser-content-container">
+        
+        <!-- App View 1: Accessible Search Portal -->
+        <div id="app-view-search" class="sandbox-app-view active">
+          <div class="search-hero">
+            <div class="search-logo">Handsfree Search</div>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Point at any element or say <strong>"Search [topic]"</strong> to find accessible web content.</p>
+            
+            <div class="search-box-large">
+              <i class="fa-solid fa-magnifying-glass" style="color: var(--primary); font-size: 1.2rem;"></i>
+              <input type="text" id="search-input-field" placeholder="Dictate search query or type here..." aria-label="Search Input Field">
+              <button class="btn btn-primary" id="trigger-search-btn">Search</button>
+            </div>
+
+            <div class="search-tags">
+              <button class="btn btn-outline quick-search-tag">Voice Control Tips</button>
+              <button class="btn btn-outline quick-search-tag">Web Accessibility Standards</button>
+              <button class="btn btn-outline quick-search-tag">Motor Impairment Tech</button>
+              <button class="btn btn-outline quick-search-tag">MediaPipe Gaze Tracking</button>
+            </div>
+          </div>
+
+          <div id="search-results-list" style="max-width: 800px; margin: 0 auto;">
+            <div class="search-result-card">
+              <a href="#" class="search-result-title">Handsfree Voice & Webcam Interaction Protocol</a>
+              <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.5;">Learn how natural head movement mapping combined with continuous Web Speech API enables zero-friction web navigation for individuals with limited dexterity.</p>
+              <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline btn-sm demo-action-btn">Read Article</button>
+                <button class="btn btn-secondary btn-sm demo-action-btn">Bookmark</button>
+              </div>
+            </div>
+
+            <div class="search-result-card">
+              <a href="#" class="search-result-title">Dwell Time Selection & Accidental Click Mitigation</a>
+              <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.5;">Detailed empirical analysis of circular dwell progress indicators, blink gesture triggers, and voice confirmation dialogs in minimizing involuntary clicks.</p>
+              <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline btn-sm demo-action-btn">Read Paper</button>
+                <button class="btn btn-secondary btn-sm demo-action-btn">Download PDF</button>
+              </div>
+            </div>
+
+            <div class="search-result-card">
+              <a href="#" class="search-result-title">Adaptive Environmental Noise & Pose Recalibration</a>
+              <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.5;">Dynamic posture tracking adaptors maintain high cursor accuracy under fluctuating ambient lighting and background noise conditions.</p>
+              <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                <button class="btn btn-outline btn-sm demo-action-btn">View Benchmark</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- App View 2: News & Article Reader -->
+        <div id="app-view-news" class="sandbox-app-view">
+          <div style="max-width: 800px; margin: 0 auto;">
+            <div class="article-header">
+              <div class="badge badge-active" style="margin-bottom: 0.5rem;">Technology & Accessibility</div>
+              <h1 class="article-title">Next-Gen Assistive Web Browsing: Breaking Digital Barriers Without Hardware</h1>
+              <div class="article-meta">
+                <span><i class="fa-regular fa-calendar"></i> October 10, 2026</span>
+                <span><i class="fa-regular fa-user"></i> Antigravity Research Lab</span>
+                <span><i class="fa-regular fa-clock"></i> 4 min read</span>
+                <button id="read-article-voice-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-volume-high"></i> Read Aloud</button>
+              </div>
+            </div>
+
+            <div class="article-body">
+              <p>For over three decades, the standard mouse and physical keyboard have remained the primary gateway to the internet. However, for millions living with motor disabilities, spinal cord injuries, ALS, cerebral palsy, or repetitive strain injuries, conventional input devices present formidable barriers.</p>
+
+              <h2 style="margin: 1.5rem 0 0.75rem 0; font-size: 1.4rem;">Webcam & Voice Fusion</h2>
+              <p>Recent advances in web-based computer vision permit real-time landmark tracking directly inside browser runtimes using WebAssembly. By mapping subtle head tilt and nose bridge displacement to screen pointer velocities, users gain smooth, pixel-accurate cursor control without wearing tracking glasses or purchasing $1,000+ hardware.</p>
+
+              <blockquote style="border-left: 4px solid var(--primary); padding-left: 1rem; margin: 1.5rem 0; font-style: italic; color: var(--text-muted);">
+                "Combining computer vision tracking with direct speech recognition creates a synergistic multimodal interface where pointing and commanding happen in parallel."
+              </blockquote>
+
+              <h2 style="margin: 1.5rem 0 0.75rem 0; font-size: 1.4rem;">Eliminating Accidental Activations</h2>
+              <p>A persistent challenge in gaze and head tracking has been the 'Midas Touch' problem—unintended clicking whenever a user pauses to read an element. Handsfree solves this using customizable dwell rings, instant voice confirmation ("click"), and eye blink gesture triggers.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- App View 3: Media Player -->
+        <div id="app-view-media" class="sandbox-app-view">
+          <div class="media-player-container">
+            <div class="media-header-row">
+              <div>
+                <h2 style="margin-bottom: 0.35rem;"><i class="fa-solid fa-video" style="color: var(--danger);"></i> Handsfree Accessible Video Player</h2>
+                <p style="color: var(--text-muted); margin-bottom: 0;">Say <strong>"play video"</strong>, <strong>"pause video"</strong>, <strong>"mute"</strong>, <strong>"fullscreen"</strong>, or <strong>"delete video"</strong></p>
+              </div>
+              <div class="media-upload-actions">
+                <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style="display: none;">
+                <button type="button" class="btn btn-primary" id="video-upload-trigger-btn">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> Upload Video
+                </button>
+                <button type="button" class="btn btn-outline" id="video-load-sample-btn" title="Try demo sample video">
+                  <i class="fa-solid fa-film"></i> Load Demo
+                </button>
+                <button type="button" class="btn btn-danger" id="video-delete-btn" style="display: none;" title="Delete current video" aria-label="Delete Loaded Video">
+                  <i class="fa-solid fa-trash-can"></i> Delete Video
+                </button>
+              </div>
+            </div>
+
+            <!-- Video File Info Pill (visible when a video is loaded) -->
+            <div id="video-file-info-bar" class="video-file-info-bar" style="display: none;">
+              <span class="video-info-badge"><i class="fa-solid fa-circle-play" style="color: var(--primary);"></i> <strong id="video-file-name-label">MyVideo.mp4</strong></span>
+              <span id="video-file-size-label" class="video-size-tag">0 MB</span>
+              <button type="button" class="btn btn-sm btn-outline" id="video-replace-btn"><i class="fa-solid fa-arrow-rotate-right"></i> Change Video</button>
+              <button type="button" class="btn btn-sm btn-danger" id="video-info-delete-btn" title="Delete current video" aria-label="Delete Loaded Video"><i class="fa-solid fa-trash-can"></i> Delete</button>
+            </div>
+
+            <!-- Main Video Screen Area -->
+            <div class="video-screen-container" id="video-screen-wrapper">
+              <!-- Empty State / Dropzone (shown before video is selected) -->
+              <div id="video-empty-dropzone" class="video-empty-dropzone">
+                <div class="dropzone-glow-circle">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; color: #14123A;">Upload Your Video File</h3>
+                <p style="color: var(--text-muted); max-width: 440px; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                  Select an MP4, WebM, or MOV video from your device or drag & drop it here. You can then play, pause, and scrub handsfree!
+                </p>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
+                  <button type="button" class="btn btn-primary" id="dropzone-select-file-btn">
+                    <i class="fa-solid fa-folder-open"></i> Browse Files
+                  </button>
+                  <button type="button" class="btn btn-outline" id="dropzone-sample-btn">
+                    <i class="fa-solid fa-play"></i> Watch Sample Video
+                  </button>
+                </div>
+              </div>
+
+              <!-- Real Video Preview Element (shown once loaded) -->
+              <video id="user-video-player" class="user-video-element" playsinline preload="metadata" style="display: none;"></video>
+
+              <!-- Video Overlay State Badge -->
+              <div id="video-overlay-play-badge" class="video-overlay-play-badge" style="display: none;">
+                <i class="fa-solid fa-play"></i>
+              </div>
+
+              <!-- Video Status Banner -->
+              <div id="video-status-text" class="video-status-banner">No Video Loaded</div>
+            </div>
+
+            <!-- Media Controls Bar -->
+            <div class="media-controls-bar">
+              <button class="hud-btn" id="video-play-btn" title="Play / Pause" aria-label="Play or Pause Video">
+                <i class="fa-solid fa-play"></i>
+              </button>
+              <button class="hud-btn" id="video-rewind-btn" title="Rewind 10s" aria-label="Rewind 10 Seconds">
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
+              <button class="hud-btn" id="video-forward-btn" title="Forward 10s" aria-label="Forward 10 Seconds">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+
+              <!-- Scrubber Progress Bar -->
+              <div class="video-progress-wrap" id="video-progress-container" title="Click or dwell to seek">
+                <div class="video-progress-fill" id="video-progress-bar"></div>
+              </div>
+
+              <!-- Time Display -->
+              <span class="video-time-chip" id="video-time-display">0:00 / 0:00</span>
+
+              <button class="hud-btn" id="video-mute-btn" title="Mute / Unmute" aria-label="Mute or Unmute Audio">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+
+              <button class="hud-btn" id="video-fullscreen-btn" title="Fullscreen" aria-label="Toggle Fullscreen">
+                <i class="fa-solid fa-expand"></i>
+              </button>
+
+              <button class="hud-btn hud-btn-danger" id="video-ctrl-delete-btn" title="Delete / Unload Video" aria-label="Delete Loaded Video">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- App View 5: Dictation Playground Notepad -->
+        <div id="app-view-notepad" class="sandbox-app-view">
+          <div class="dictation-pad-container">
+
+            <div class="dictation-header-row">
+              <h2><i class="fa-solid fa-pen-nib" style="color: var(--accent);"></i> Voice Dictation Pad</h2>
+              <div style="display: flex; gap: 0.65rem; align-items: center;">
+                <button class="btn btn-secondary" id="dictate-clear-btn"><i class="fa-solid fa-trash"></i> Clear Text</button>
+                <button class="btn btn-primary" id="dictate-copy-btn"><i class="fa-solid fa-copy"></i> Copy Note</button>
+              </div>
+            </div>
+
+            <p style="color: var(--text-muted); margin: -0.5rem 0 0 0; font-size: 0.95rem;">
+              Speak naturally — voice commands like <strong>"new line"</strong>, <strong>"bullet"</strong>, <strong>"heading"</strong>, <strong>"delete word"</strong>, and <strong>"clear note"</strong> work automatically.
+            </p>
+
+            <div class="editor-toolbar">
+              <button class="btn btn-outline btn-sm" id="voice-cmd-heading">💬 Say "Heading"</button>
+              <button class="btn btn-outline btn-sm" id="voice-cmd-new-line">💬 Say "New Line"</button>
+              <button class="btn btn-outline btn-sm" id="voice-cmd-bullet">💬 Say "Bullet"</button>
+              <button class="btn btn-outline btn-sm" id="voice-cmd-delete-word">💬 Say "Delete Word"</button>
+            </div>
+
+            <textarea
+              id="notepad-dictation-input"
+              class="notepad-area"
+              placeholder="Speak clearly to dictate your notes here... try saying 'heading', 'new line', 'bullet', or 'delete word'."
+            ></textarea>
+
+            <div class="notepad-word-count" id="notepad-word-count">0 words · 0 characters</div>
+
+          </div>
+        </div>
+
+        <!-- App View 6: Evaluation & Benchmark Test Challenge -->
+        <div id="app-view-benchmark" class="sandbox-app-view">
+          <div style="max-width: 900px; margin: 0 auto;">
+            <h2 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-bullseye" style="color: #38bdf8;"></i> Fitts's Law Target Acquisition Challenge</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Click appearing circular targets using your webcam head pointer or voice to benchmark response time and selection accuracy against mouse input.</p>
+
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Targets Hit</div>
+                <div class="metric-value" id="bench-targets-hit">0 / 10</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">Avg Acquisition Time</div>
+                <div class="metric-value" id="bench-avg-time">0.00s</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">Selection Errors</div>
+                <div class="metric-value" id="bench-errors" style="color: var(--warning);">0</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">Overall Accuracy</div>
+                <div class="metric-value" id="bench-accuracy">100%</div>
+              </div>
+            </div>
+
+            <div class="target-challenge-canvas" id="challenge-canvas-area">
+              <!-- Idle hint shown before challenge starts -->
+              <div class="canvas-idle-hint" id="canvas-idle-hint">
+                <i class="fa-solid fa-bullseye"></i>
+                <span>Press <strong>Start Challenge</strong> below to begin</span>
+              </div>
+              <!-- Target (hidden until challenge is running) -->
+              <div id="active-benchmark-target" class="challenge-target" style="display: none; top: 50%; left: 50%;">1</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 1.25rem;">
+              <button class="btn btn-primary" id="start-benchmark-challenge-btn"><i class="fa-solid fa-play"></i> Start 10-Target Challenge</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- App View 7: E-Learning & Online Course Portal -->
+        <div id="app-view-elearning" class="sandbox-app-view">
+          <div style="max-width: 960px; margin: 0 auto;">
+            <!-- Hero Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; background: var(--bg-card); padding: 1.75rem 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-glass-bright);">
+              <div>
+                <div class="badge badge-active" style="margin-bottom: 0.5rem; background: rgba(244, 63, 94, 0.15); color: #f43f5e; border-color: rgba(244, 63, 94, 0.3);">
+                  <i class="fa-solid fa-graduation-cap"></i> E-Learning Platform
+                </div>
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.4rem;">EduFree: Handsfree Learning Portal</h1>
+                <p style="color: var(--text-muted);">Explore courses, watch interactive lessons, and complete handsfree quizzes via head movements or voice commands.</p>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Course Progress</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);" id="elearning-progress-text">75%</div>
+              </div>
+            </div>
+
+            <!-- Course Categories / Filter Tags -->
+            <div class="search-tags" style="justify-content: flex-start; margin-bottom: 1.5rem;">
+              <button class="btn btn-primary btn-sm elearning-cat-tag">All Courses</button>
+              <button class="btn btn-outline btn-sm elearning-cat-tag">Web Development</button>
+              <button class="btn btn-outline btn-sm elearning-cat-tag">AI & Neural Networks</button>
+              <button class="btn btn-outline btn-sm elearning-cat-tag">UI/UX Design Systems</button>
+              <button class="btn btn-outline btn-sm elearning-cat-tag">Data Science</button>
+            </div>
+
+            <!-- Main Course Player Layout -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+              
+              <!-- Left Column: Video & Quiz Section -->
+              <div>
+                <div class="video-mock-screen" id="elearning-video-screen" style="aspect-ratio: 16/9; background: #000; border-radius: var(--radius-md); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-glass-bright);">
+                  <div id="elearning-play-overlay" style="text-align: center;">
+                    <div style="font-size: 3.5rem; color: #f43f5e; margin-bottom: 0.5rem;" id="elearning-video-icon"><i class="fa-solid fa-circle-play"></i></div>
+                    <div style="font-weight: 700; font-size: 1.1rem;" id="elearning-lesson-title">Lesson 4: Building Multimodal Accessible Interfaces</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Instructor: Dr. Sarah Chen • 14:20 mins</div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding: 1rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+                  <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-primary btn-sm" id="elearning-play-btn"><i class="fa-solid fa-play"></i> Play Lesson</button>
+                    <button class="btn btn-secondary btn-sm" id="elearning-next-btn"><i class="fa-solid fa-forward"></i> Next Lesson</button>
+                  </div>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-outline btn-sm" id="elearning-transcript-btn"><i class="fa-solid fa-closed-captioning"></i> Transcript</button>
+                    <button class="btn btn-outline btn-sm" id="elearning-quiz-btn"><i class="fa-solid fa-circle-question"></i> Take Quiz</button>
+                  </div>
+                </div>
+
+                <!-- Interactive Quiz Container -->
+                <div id="elearning-quiz-card" class="glass-panel" style="margin-top: 1.5rem; padding: 1.5rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-circle-question" style="color: #f43f5e;"></i> Lesson Quiz</h3>
+                    <span class="badge badge-active">Question 1 of 3</span>
+                  </div>
+
+                  <p style="font-weight: 600; font-size: 1.05rem; margin-bottom: 1rem;">Which computer vision technique maps facial orientation to smooth cursor movements without hardware?</p>
+
+                  <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button class="btn btn-outline quiz-option-btn" data-correct="false" style="justify-content: flex-start; text-align: left; padding: 0.875rem 1.25rem;">
+                      <strong style="color: var(--primary); margin-right: 0.75rem;">A)</strong> Infrared Laser Scanning
+                    </button>
+                    <button class="btn btn-outline quiz-option-btn" data-correct="true" style="justify-content: flex-start; text-align: left; padding: 0.875rem 1.25rem;">
+                      <strong style="color: var(--primary); margin-right: 0.75rem;">B)</strong> MediaPipe Facial Landmark Coordinate Displacement
+                    </button>
+                    <button class="btn btn-outline quiz-option-btn" data-correct="false" style="justify-content: flex-start; text-align: left; padding: 0.875rem 1.25rem;">
+                      <strong style="color: var(--primary); margin-right: 0.75rem;">C)</strong> Physical Gyroscopic Headset
+                    </button>
+                  </div>
+
+                  <div id="quiz-result-feedback" style="margin-top: 1rem; font-weight: 600; font-size: 0.95rem;"></div>
+                </div>
+              </div>
+
+              <!-- Right Column: Course Syllabus & Playlist -->
+              <div>
+                <div class="glass-panel" style="padding: 1.25rem;">
+                  <h3 style="font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-list-ol" style="color: var(--secondary);"></i> Course Modules
+                  </h3>
+
+                  <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <div class="search-result-card" style="padding: 0.875rem; margin: 0; background: rgba(16, 185, 129, 0.1); border-color: var(--primary);">
+                      <div style="font-size: 0.75rem; color: var(--primary); font-weight: 700;">MODULE 1 • COMPLETED</div>
+                      <div style="font-weight: 600; font-size: 0.95rem;">1. Introduction to Assistive Web UX</div>
+                    </div>
+
+                    <div class="search-result-card" style="padding: 0.875rem; margin: 0; border-color: #f43f5e;">
+                      <div style="font-size: 0.75rem; color: #f43f5e; font-weight: 700;">MODULE 2 • NOW PLAYING</div>
+                      <div style="font-weight: 600; font-size: 0.95rem;">2. Head Landmark Vector Mapping</div>
+                    </div>
+
+                    <div class="search-result-card" style="padding: 0.875rem; margin: 0; opacity: 0.7;">
+                      <div style="font-size: 0.75rem; color: var(--text-muted);">MODULE 3 • NEXT UP</div>
+                      <div style="font-weight: 600; font-size: 0.95rem;">3. Voice Navigation Intent Parsing</div>
+                    </div>
+
+                    <div class="search-result-card" style="padding: 0.875rem; margin: 0; opacity: 0.7;">
+                      <div style="font-size: 0.75rem; color: var(--text-muted);">MODULE 4</div>
+                      <div style="font-weight: 600; font-size: 0.95rem;">4. Fitts's Law Accuracy Evaluation</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Floating Virtual Cursor Pointer & Dwell Ring Overlay -->
+  <div id="handsfree-virtual-pointer">
+    <div class="pointer-dot"></div>
+    <svg class="dwell-svg" viewBox="0 0 44 44">
+      <circle class="dwell-circle-bg" cx="22" cy="22" r="20"></circle>
+      <circle id="dwell-circle-progress" class="dwell-circle-progress" cx="22" cy="22" r="20"></circle>
+    </svg>
+  </div>
+
+  <!-- Floating HUD Controller Bar (Bottom Center) -->
+  <div class="hud-bar" id="floating-hud-bar">
+    <button class="hud-btn" id="hud-toggle-cam" title="Toggle Webcam Control"><i class="fa-solid fa-video"></i></button>
+    <button class="hud-btn active" id="hud-toggle-voice" title="Toggle Voice Recognition"><i class="fa-solid fa-microphone"></i></button>
+    
+    <div class="hud-item">
+      <div class="voice-hud-indicator">
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+        <div class="voice-wave-bar"></div>
+      </div>
+      <span id="hud-speech-status">Listening...</span>
+    </div>
+
+    <div class="hud-item">
+      <i class="fa-solid fa-clock" style="color: var(--primary);"></i> Dwell: <span id="hud-dwell-time-text">1.0s</span>
+    </div>
+
+    <button class="hud-btn" id="hud-recalibrate-btn" title="Recalibrate Head Center"><i class="fa-solid fa-arrows-to-dot"></i></button>
+  </div>
+
+  <!-- Floating Webcam Preview Widget (Top Right HD Display - Movable/Draggable) -->
+  <div class="webcam-hud-widget" id="webcam-preview-box">
+    <div class="webcam-drag-handle" id="webcam-drag-handle" title="Click & Drag to reposition webcam preview">
+      <span><i class="fa-solid fa-grip"></i> Drag to Move</span>
+      <span style="font-size: 0.75rem; color: var(--primary);">CAMERA</span>
+    </div>
+    <video id="webcam-video" class="webcam-video-element" autoplay playsinline muted></video>
+    <canvas id="webcam-mesh-canvas" class="webcam-canvas-overlay"></canvas>
+    <div class="webcam-status-overlay">
+      <span>FPS: <strong id="fps-counter-text" style="color: #4F46E5; margin-right: 6px;">30</strong></span>
+      <span id="tracking-mode-tag" style="color: #4F46E5; font-weight: 800; letter-spacing: 0.05em; margin: 0 8px;">HEAD TRACKING</span>
+      <button id="toggle-webcam-size-btn" style="background: transparent; border: none; color: #14123A; cursor: pointer; padding: 2px 6px;" title="Toggle Large / Compact Preview">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 30-Second Quick Calibration Overlay Wizard -->
+  <div class="calibration-overlay" id="calibration-modal-overlay">
+    <div class="calibration-step-card">
+      <div class="calibration-progress-bar">
+        <div class="calibration-progress-fill" id="calibration-progress-fill"></div>
+      </div>
+
+      <h2 id="calibration-step-title" style="margin-bottom: 0.75rem;">30-Second Quick Calibration</h2>
+      <p id="calibration-step-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Position your head comfortably facing the webcam. Keep still and gaze at each highlight point for 2 seconds.</p>
+
+      <div class="environment-meters">
+        <div class="meter-box">
+          <div style="font-size: 0.85rem; font-weight: 600;">Webcam Lighting Level</div>
+          <div class="meter-bar-container">
+            <div class="meter-fill-lighting" id="meter-lighting-bar"></div>
+          </div>
+        </div>
+
+        <div class="meter-box">
+          <div style="font-size: 0.85rem; font-weight: 600;">Ambient Noise Threshold</div>
+          <div class="meter-bar-container">
+            <div class="meter-fill-noise" id="meter-noise-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <span>Pointer Sensitivity / Speed</span>
+          <span id="sensitivity-value-text">1.8x</span>
+        </div>
+        <input type="range" min="0.5" max="4.0" step="0.1" value="1.8" class="range-slider" id="sensitivity-range-slider">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <span>Dwell Selection Time (ms)</span>
+          <span id="dwell-speed-value-text">1000ms</span>
+        </div>
+        <input type="range" min="400" max="2000" step="100" value="1000" class="range-slider" id="dwell-speed-range-slider">
+      </div>
+
+      <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem;">
+        <button class="btn btn-primary" id="start-calibration-points-btn">Start 5-Point Alignment</button>
+        <button class="btn btn-outline" id="close-calibration-btn">Close Setup</button>
+      </div>
+    </div>
+
+    <!-- 5-Point Alignment Dots (Rendered dynamically) -->
+    <div id="alignment-dots-container"></div>
+  </div>
+
+  <!-- Performance Evaluation Modal -->
+  <div class="modal-backdrop" id="metrics-modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Performance & Accuracy Evaluation</div>
+        <button class="btn btn-outline btn-icon-only" id="close-metrics-modal-btn">&times;</button>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Speech Accuracy</div>
+          <div class="metric-value metric-value-giant" id="eval-speech-accuracy">96.4%</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Dwell Selections</div>
+          <div class="metric-value metric-value-giant" id="eval-total-dwells">42</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Accidental Clicks</div>
+          <div class="metric-value metric-value-giant" id="eval-accidental-clicks">0</div>
+        </div>
+      </div>
+
+      <h4 style="margin: 1.5rem 0 0.75rem 0; font-family: 'Space Grotesk', sans-serif;">System Performance Log</h4>
+      <div id="evaluation-log-box" style="background: rgba(255,255,255,0.9); border: 1px solid rgba(79, 70, 229, 0.15); border-radius: var(--radius-sm); padding: 1rem; height: 180px; overflow-y: auto; font-family: var(--font-code); font-size: 0.85rem; color: #14123A;">
+        <div>[System] Handsfree Evaluation Suite Initialized.</div>
+        <div>[Tracker] MediaPipe FaceLandmarker pipeline active at 30 FPS.</div>
+        <div>[Voice] SpeechRecognition listening for navigation intents.</div>
+      </div>
+
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button class="btn btn-secondary" id="export-metrics-btn"><i class="fa-solid fa-download"></i> Export Analytics Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Handsfree Video Selection & Library Modal -->
+  <div class="modal-backdrop" id="video-picker-modal-backdrop">
+    <div class="modal-card" style="max-width: 740px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div class="modal-title" style="font-size: 1.35rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
+          <i class="fa-solid fa-film" style="color: var(--primary);"></i> Handsfree Video Selector
+        </div>
+        <button class="btn btn-outline btn-icon-only" id="close-video-modal-btn" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <!-- Browser Security Notice Banner -->
+      <div class="video-modal-security-pill">
+        <i class="fa-solid fa-circle-info" style="color: var(--primary); font-size: 1.25rem; margin-top: 0.1rem;"></i>
+        <div style="font-size: 0.9rem; color: #14123A; line-height: 1.5;">
+          <strong>Why didn't your file manager open?</strong><br>
+          Web browser security prohibits automated webcam gestures from opening your computer's OS file dialog without a real hardware key/click.
+          Dwell on any video clip below to load it handsfree, or tap <strong>SPACEBAR / ENTER</strong> on your keyboard / switch to open Windows File Explorer!
+        </div>
+      </div>
+
+      <!-- Option 1: Native Local File Launcher (Spacebar / Click) -->
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.6rem; color: #14123A; text-transform: uppercase; letter-spacing: 0.05em;">
+          <i class="fa-solid fa-folder-open" style="color: #4F46E5;"></i> From Your Device
+        </h4>
+        <button type="button" class="btn btn-primary" id="modal-native-file-btn" style="width: 100%; padding: 0.95rem; font-size: 1.05rem; justify-content: center;">
+          <i class="fa-solid fa-arrow-up-from-bracket"></i> Open Windows File Explorer (or Press SPACEBAR / ENTER)
+        </button>
+      </div>
+
+      <!-- Option 2: Instant Handsfree Library Clips (Dwell Selectable) -->
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.6rem; color: #14123A; text-transform: uppercase; letter-spacing: 0.05em;">
+          <i class="fa-solid fa-play-circle" style="color: #F43F9D;"></i> Instant Dwell Video Library
+        </h4>
+        <div class="video-presets-grid">
+          <div class="video-preset-card" role="button" tabindex="0" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" data-video-name="Big Buck Bunny">
+            <div class="preset-icon-wrap" style="color: #4F46E5;">
+              <i class="fa-solid fa-rabbit"></i>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #14123A;">Big Buck Bunny</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Animation (MP4)</div>
+            </div>
+          </div>
+
+          <div class="video-preset-card" role="button" tabindex="0" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" data-video-name="Elephants Dream">
+            <div class="preset-icon-wrap" style="color: #F43F9D;">
+              <i class="fa-solid fa-atom"></i>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #14123A;">Elephants Dream</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Open Sci-Fi Project</div>
+            </div>
+          </div>
+
+          <div class="video-preset-card" role="button" tabindex="0" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" data-video-name="For Bigger Blazes">
+            <div class="preset-icon-wrap" style="color: #F59E0B;">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #14123A;">For Bigger Blazes</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Chromecast Promo</div>
+            </div>
+          </div>
+
+          <div class="video-preset-card" role="button" tabindex="0" data-video-url="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" data-video-name="Tears of Steel">
+            <div class="preset-icon-wrap" style="color: #10B981;">
+              <i class="fa-solid fa-film"></i>
+            </div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem; color: #14123A;">Tears of Steel</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">VFX Cinematic Demo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option 3: Web Video URL / Dictation Input -->
+      <div>
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.6rem; color: #14123A; text-transform: uppercase; letter-spacing: 0.05em;">
+          <i class="fa-solid fa-globe" style="color: #06B6D4;"></i> Or Load via Video URL
+        </h4>
+        <div style="display: flex; gap: 0.6rem;">
+          <input type="url" id="modal-video-url-input" class="form-input" placeholder="Paste or dictate video URL (.mp4, .webm)..." style="flex: 1; padding: 0.75rem 1rem; border-radius: var(--radius-full); border: 1.5px solid rgba(79, 70, 229, 0.2);">
+          <button type="button" class="btn btn-secondary" id="modal-load-url-btn">Load URL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-notifications-container"></div>
+
+  <!-- JS Modules Execution Entry point -->
+  <script type="module" src="src/js/auth.js"></script>
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>

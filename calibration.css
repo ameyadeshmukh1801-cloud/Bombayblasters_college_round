@@ -1,0 +1,162 @@
+/* ==========================================================================
+   30-SECOND QUICK CALIBRATION SUITE - AURORA LIGHT (calibration.css)
+   ========================================================================== */
+
+.calibration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(247, 244, 255, 0.85);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.calibration-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.calibration-step-card {
+  max-width: 660px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-lg);
+  padding: 2.75rem;
+  text-align: center;
+  box-shadow: 0 30px 60px -15px rgba(79, 70, 229, 0.2);
+}
+
+.calibration-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 99px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.calibration-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--gradient-btn);
+  transition: width 0.4s ease;
+  box-shadow: 0 0 12px rgba(244, 63, 157, 0.4);
+}
+
+/* 5-Point Alignment Dot Grid */
+.alignment-target-point {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  margin-top: -24px;
+  border-radius: 50%;
+  background: rgba(79, 70, 229, 0.15);
+  border: 3px solid #4F46E5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100005;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 157, 0.6); }
+  70% { transform: scale(1.18); box-shadow: 0 0 0 18px rgba(244, 63, 157, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 157, 0); }
+}
+
+.alignment-target-point.completed {
+  background: var(--gradient-btn);
+  border-color: #ffffff;
+  color: #ffffff;
+  font-weight: bold;
+  animation: none;
+  transform: scale(0.9);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+}
+
+/* Lighting & Noise Meters */
+.environment-meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 1.75rem 0;
+}
+
+.meter-box {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+  text-align: left;
+}
+
+.meter-bar-container {
+  width: 100%;
+  height: 10px;
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 99px;
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.meter-fill-lighting {
+  height: 100%;
+  width: 75%;
+  background: linear-gradient(90deg, #FFB400, #4F46E5);
+  transition: width 0.3s ease;
+}
+
+.meter-fill-noise {
+  height: 100%;
+  width: 25%;
+  background: linear-gradient(90deg, #4F46E5, #FF5C5C);
+  transition: width 0.3s ease;
+}
+
+/* Slider Controls */
+.slider-group {
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #14123A;
+}
+
+.range-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  background: rgba(79, 70, 229, 0.12);
+  height: 10px;
+  border-radius: 99px;
+  outline: none;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gradient-btn);
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(244, 63, 157, 0.4);
+}

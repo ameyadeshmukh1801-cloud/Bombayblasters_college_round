@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Handsfree - Voice and Webcam Web Browsing",
+  "version": "2.4.0",
+  "description": "Accessible voice and webcam-based web browsing extension. Control cursor, navigate web pages, and dictate text without mouse or keyboard.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Handsfree Controller"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["public/extension/content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "src/assets/icon16.png",
+    "48": "src/assets/icon48.png",
+    "128": "src/assets/icon128.png"
+  }
+}
